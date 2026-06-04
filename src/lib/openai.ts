@@ -2,6 +2,9 @@ import OpenAI from "openai";
 import { normalizeGeneration } from "@/lib/generation";
 import type { DemoGeneration, DemoPathId } from "@/lib/types";
 
+export const FREE_MODEL = "gpt-5-nano";
+export const DEFAULT_BYOK_MODEL = "gpt-5-mini";
+
 const stringArray = (minItems: number, maxItems: number) => ({
   type: "array",
   items: { type: "string" },
@@ -243,7 +246,11 @@ Rules:
 
 let client: OpenAI | null = null;
 
-function getOpenAIClient() {
+function getOpenAIClient(apiKey?: string) {
+  if (apiKey) {
+    return new OpenAI({ apiKey });
+  }
+
   if (!client) {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY is not configured");
@@ -260,9 +267,13 @@ function getOpenAIClient() {
 export async function analyzeRepo(
   readmeText: string,
   preferredPath: DemoPathId = "portfolio",
+  options: {
+    apiKey?: string;
+    model?: string;
+  } = {},
 ): Promise<DemoGeneration> {
-  const response = await getOpenAIClient().responses.create({
-    model: process.env.OPENAI_MODEL || "gpt-5-mini-2025-08-07",
+  const response = await getOpenAIClient(options.apiKey).responses.create({
+    model: options.model || process.env.OPENAI_MODEL || FREE_MODEL,
     input: [
       {
         role: "system",

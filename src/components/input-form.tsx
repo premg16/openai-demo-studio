@@ -8,8 +8,10 @@ import {
   Check,
   ClipboardPaste,
   Github,
+  KeyRound,
   Loader2,
   RotateCcw,
+  ShieldCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ApiError, GenerationRow } from "@/lib/types";
@@ -32,6 +34,14 @@ const analysisStages: { id: AnalysisStageId; label: string }[] = [
   { id: "save", label: "Save generation" },
 ];
 
+const byokModels = [
+  { label: "GPT-5 mini", value: "gpt-5-mini" },
+  { label: "GPT-5", value: "gpt-5" },
+  { label: "GPT-4.1", value: "gpt-4.1" },
+  { label: "GPT-4.1 mini", value: "gpt-4.1-mini" },
+  { label: "GPT-4.1 nano", value: "gpt-4.1-nano" },
+];
+
 function isGitHubRepoUrl(value: string) {
   return /^https?:\/\/(?:www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/.*)?$/.test(
     value.trim(),
@@ -49,6 +59,9 @@ export function InputForm() {
   const [repoUrl, setRepoUrl] = useState("");
   const [readmeText, setReadmeText] = useState("");
   const [error, setError] = useState("");
+  const [useOwnKey, setUseOwnKey] = useState(false);
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
+  const [selectedModel, setSelectedModel] = useState("gpt-5-mini");
   const [isLoading, setIsLoading] = useState(false);
   const [activeStage, setActiveStage] = useState<AnalysisStageId | null>(null);
   const [failedStage, setFailedStage] = useState<AnalysisStageId | null>(null);
@@ -76,6 +89,11 @@ export function InputForm() {
 
     if (mode === "readme" && !readmeText.trim()) {
       setError("Paste README content before analyzing.");
+      return;
+    }
+
+    if (useOwnKey && !openaiApiKey.trim()) {
+      setError("Add your OpenAI API key or turn off BYOK mode.");
       return;
     }
 
@@ -120,6 +138,8 @@ export function InputForm() {
           readmeText: sourceReadme,
           repoUrl: mode === "github" ? repoUrl.trim() : null,
           preferredPath: "portfolio",
+          openaiApiKey: useOwnKey ? openaiApiKey.trim() : undefined,
+          model: useOwnKey ? selectedModel : undefined,
         }),
       });
 
@@ -205,6 +225,63 @@ export function InputForm() {
             className="min-h-56 w-full resize-y border border-[var(--foreground)] bg-white px-4 py-3 text-base leading-7 outline-none transition placeholder:text-[var(--muted)] focus:focus-ring"
           />
         )}
+      </div>
+
+      <div className="mt-4 border border-[var(--border)] bg-white p-3">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            checked={useOwnKey}
+            onChange={(event) => setUseOwnKey(event.target.checked)}
+            type="checkbox"
+            className="mt-1 size-4 accent-[var(--accent)]"
+          />
+          <span>
+            <span className="flex items-center gap-2 text-sm font-black text-[var(--foreground)]">
+              <KeyRound size={16} aria-hidden="true" />
+              Use my OpenAI key
+            </span>
+            <span className="mt-1 block text-sm leading-6 text-[var(--muted)]">
+              Free mode uses GPT-5 nano with a daily limit. BYOK skips the free
+              quota and uses your key only for this request.
+            </span>
+          </span>
+        </label>
+
+        {useOwnKey ? (
+          <div className="mt-3 grid gap-3">
+            <input
+              value={openaiApiKey}
+              onChange={(event) => setOpenaiApiKey(event.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="sk-..."
+              className="min-h-11 w-full border border-[var(--foreground)] bg-white px-3 text-sm outline-none transition placeholder:text-[var(--muted)] focus:focus-ring"
+            />
+            <label className="grid gap-1 text-sm font-bold text-[var(--foreground)]">
+              Model
+              <select
+                value={selectedModel}
+                onChange={(event) => setSelectedModel(event.target.value)}
+                className="min-h-11 w-full border border-[var(--foreground)] bg-white px-3 text-sm outline-none transition focus:focus-ring"
+              >
+                {byokModels.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="flex items-start gap-2 text-xs leading-5 text-[var(--muted)]">
+              <ShieldCheck
+                className="mt-0.5 shrink-0 text-[var(--accent)]"
+                size={14}
+                aria-hidden="true"
+              />
+              The key is sent to the server for this analysis only and is never
+              saved with the generation.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {error ? (

@@ -59,33 +59,41 @@ cp .env.example .env.local
 
 ```bash
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-5-mini-2025-08-07
+OPENAI_MODEL=
 DATABASE_URL="postgresql://postgres.your-ref:your-password@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require"
+FREE_DAILY_LIMIT=5
 ```
 
-`OPENAI_MODEL` is optional. If it is empty, the app uses the default model configured in `src/lib/openai.ts`.
+Free usage uses `gpt-5-nano`.
+`OPENAI_MODEL` is optional and only used as a server fallback when a route does not pass a model explicitly.
+`FREE_DAILY_LIMIT` is optional and defaults to `5` generations per client per UTC day.
 `DATABASE_URL` should be the Supabase Shared Pooler URI from Project Settings, Database, Connect. Keep it server-side only and do not prefix it with `NEXT_PUBLIC_`.
 The direct URI `db.your-ref.supabase.co:5432` can fail on IPv4-only networks because Supabase direct database connections are IPv6-only unless the project has the IPv4 add-on.
 If your database password contains special characters, URL-encode the password and keep the full value quoted in `.env.local`.
 
-4. Create the Supabase table with either path.
-
-```bash
-supabase db push
-```
-
-or run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
-
-For local setup, push the current Drizzle schema from `src/db/schema.ts`:
+4. Apply the database migrations.
 
 ```bash
 bun run db:check
-bun run db:push
+bun run db:migrate
 ```
 
-Use `bun run db:generate` only after changing `src/db/schema.ts` and wanting a new migration file. Use `bun run db:migrate` only when you want Drizzle to apply generated migration files instead of pushing the schema directly.
+You can also run the SQL files in `supabase/migrations` inside the Supabase SQL editor.
 
-Drizzle stores local migration snapshots in `supabase/migrations/meta`. When `bun run db:migrate` runs, Drizzle also creates a database-side migration log table at `drizzle.__drizzle_migrations` and records which SQL files have already been applied. `bun run db:push` does not use that migration log table because it pushes the current schema directly.
+Use `bun run db:generate` only after changing `src/db/schema.ts` and wanting a new migration file. Use `bun run db:migrate` to apply migration files and record them in `drizzle.__drizzle_migrations`.
+
+```bash
+bun run db:generate
+bun run db:migrate
+```
+
+Drizzle stores local migration snapshots in `supabase/migrations/meta`. When `bun run db:migrate` runs, Drizzle also creates a database-side migration log table at `drizzle.__drizzle_migrations` and records which SQL files have already been applied.
+
+## Cost Controls
+
+Free generations use the server `OPENAI_API_KEY`, default to `gpt-5-nano`, and are limited by `FREE_DAILY_LIMIT`. Usage is tracked in the `usage_limits` table by a hashed client identity and UTC day.
+
+Users can choose BYOK in the form, paste their own OpenAI API key, and select a model for that single request. BYOK requests skip the free quota and the key is not saved with the generation.
 
 5. Start the app.
 
@@ -142,7 +150,6 @@ bun run typecheck
 bun run build
 bun run db:check
 bun run db:generate
-bun run db:push
 bun run db:migrate
 ```
 

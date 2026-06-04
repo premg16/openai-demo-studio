@@ -114,6 +114,8 @@ export type AnalyzeRequest = {
   readmeText: string;
   repoUrl?: string | null;
   preferredPath?: DemoPathId;
+  openaiApiKey?: string;
+  model?: string;
 };
 
 export type ApiError = {
