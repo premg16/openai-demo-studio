@@ -51,8 +51,10 @@ export function InputForm() {
         );
 
         if (!fetchResponse.ok) {
+          const payload = await parseJson<ApiError>(fetchResponse);
           throw new Error(
-            "Could not fetch README. Check the URL or try pasting the README directly.",
+            payload.error ||
+              "Could not fetch README. Check the URL or try pasting the README directly.",
           );
         }
 
