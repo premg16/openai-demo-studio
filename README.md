@@ -59,11 +59,20 @@ cp .env.example .env.local
 
 ```bash
 OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-5-mini-2025-08-07
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-4. Create the Supabase table by running the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
+`OPENAI_MODEL` is optional. If it is empty, the app uses the default model configured in `src/lib/openai.ts`.
+
+4. Create the Supabase table with either path:
+
+```bash
+supabase db push
+```
+
+or run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
 
 5. Start the app.
 
@@ -93,7 +102,7 @@ create table if not exists public.generations (
 );
 ```
 
-For v1, history is public. Use the full SQL in `supabase/schema.sql` to add the canonical `generation` JSON column, keep the legacy columns, and enable row level security with explicit public read and insert policies for the anon role.
+For v1, history is public. Use the migration in `supabase/migrations` or the full SQL in `supabase/schema.sql` to add the canonical `generation` JSON column, keep the legacy columns, and enable row level security with explicit public read and insert policies for the anon role.
 
 ## Deploy To Vercel
 
@@ -102,6 +111,16 @@ For v1, history is public. Use the full SQL in `supabase/schema.sql` to add the 
 3. Set the same three environment variables in the Vercel project settings.
 4. Deploy with the default Next.js settings.
 5. After deploy, test both input modes and confirm the history sidebar shows saved generations.
+
+The repo includes `vercel.json` so Vercel uses Bun for install and build:
+
+```bash
+vercel env add OPENAI_API_KEY
+vercel env add OPENAI_MODEL
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel deploy --prod
+```
 
 ## Project Scripts
 
