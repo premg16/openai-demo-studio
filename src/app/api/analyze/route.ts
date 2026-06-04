@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
+import { drizzleRowToGeneration, saveGeneration } from "@/db/generations";
 import { normalizeGeneration } from "@/lib/generation";
 import { analyzeRepo } from "@/lib/openai";
-import { getSupabaseClient } from "@/lib/supabase";
 import type { AnalyzeRequest, GenerationRow } from "@/lib/types";
 
 const MAX_README_LENGTH = 8000;
@@ -23,46 +23,29 @@ export async function POST(request: Request) {
       await analyzeRepo(truncatedReadme, body.preferredPath),
     );
     const rowBase = {
-      repo_url: body.repoUrl?.trim() || null,
-      readme_snippet: truncatedReadme.slice(0, 500),
+      repoUrl: body.repoUrl?.trim() || null,
+      readmeSnippet: truncatedReadme.slice(0, 500),
       generation,
-      sample_app: generation.sampleApp,
-      tutorial_outline: generation.tutorialOutline,
-      architecture_notes: generation.architectureNotes,
-      deploy_checklist: generation.deployChecklist,
+      sampleApp: generation.sampleApp,
+      tutorialOutline: generation.tutorialOutline,
+      architectureNotes: generation.architectureNotes,
+      deployChecklist: generation.deployChecklist,
     };
-    const supabase = getSupabaseClient();
-    let saved: {
-      id: string;
-      created_at: string;
-      repo_url: string | null;
-      readme_snippet: string;
-      generation?: unknown;
-      sample_app: unknown;
-      tutorial_outline: unknown;
-      architecture_notes: unknown;
-      deploy_checklist: unknown;
-    } | null = null;
 
-    if (supabase) {
-      const { data, error } = await supabase
-        .from("generations")
-        .insert(rowBase)
-        .select()
-        .single();
+    let saved: GenerationRow | null = null;
 
-      if (error) {
-        console.error("Supabase write failed", error);
-      } else {
-        saved = data;
-      }
+    try {
+      const savedRow = await saveGeneration(rowBase);
+      saved = savedRow ? drizzleRowToGeneration(savedRow) : null;
+    } catch (error) {
+      console.error("Generation save failed", error);
     }
 
     const response: GenerationRow = {
       id: saved?.id ?? crypto.randomUUID(),
       created_at: saved?.created_at ?? new Date().toISOString(),
-      repo_url: saved?.repo_url ?? rowBase.repo_url,
-      readme_snippet: saved?.readme_snippet ?? rowBase.readme_snippet,
+      repo_url: saved?.repo_url ?? rowBase.repoUrl,
+      readme_snippet: saved?.readme_snippet ?? rowBase.readmeSnippet,
       ...generation,
     };
 

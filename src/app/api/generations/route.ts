@@ -1,56 +1,39 @@
 import { NextResponse } from "next/server";
-import { rowToGeneration } from "@/lib/generation";
-import { getSupabaseClient } from "@/lib/supabase";
-import type { DemoGeneration, GenerationRow } from "@/lib/types";
-
-type GenerationRecord = {
-  id: string;
-  created_at: string;
-  repo_url: string | null;
-  readme_snippet: string;
-  generation?: DemoGeneration | null;
-  sample_app?: GenerationRow["sampleApp"] | null;
-  tutorial_outline?: GenerationRow["tutorialOutline"] | null;
-  architecture_notes?: GenerationRow["architectureNotes"] | null;
-  deploy_checklist?: GenerationRow["deployChecklist"] | null;
-};
+import {
+  drizzleRowToGeneration,
+  getRecentGenerations,
+  isMissingDatabaseUrl,
+  isMissingGenerationsTable,
+} from "@/db/generations";
 
 export async function GET() {
   try {
-    const supabase = getSupabaseClient();
-
-    if (!supabase) {
-      return NextResponse.json([]);
+    if (isMissingDatabaseUrl()) {
+      return NextResponse.json(
+        {
+          error:
+            "DATABASE_URL is not configured. Add your Supabase direct connection string to .env.local.",
+        },
+        { status: 503 },
+      );
     }
 
-    const { data, error } = await supabase
-      .from("generations")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10);
+    const rows = await getRecentGenerations();
 
-    if (error) {
-      console.error("Supabase history fetch failed", error);
-      if (error.code === "PGRST205") {
-        return NextResponse.json(
-          {
-            error:
-              "Supabase generations table is not set up. Run the migration in supabase/migrations or the SQL in supabase/schema.sql.",
-          },
-          { status: 503 },
-        );
-      }
-
-      return NextResponse.json({ error: "Could not load generations" }, { status: 500 });
-    }
-
-    const rows: GenerationRow[] = ((data ?? []) as GenerationRecord[]).map(
-      rowToGeneration,
-    );
-
-    return NextResponse.json(rows);
+    return NextResponse.json((rows ?? []).map(drizzleRowToGeneration));
   } catch (error) {
-    console.error("Supabase history fetch failed", error);
+    console.error("Generation history fetch failed", error);
+
+    if (isMissingGenerationsTable(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "The generations table is not set up. Run the migration in supabase/migrations or the SQL in supabase/schema.sql.",
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json({ error: "Could not load generations" }, { status: 500 });
   }
 }

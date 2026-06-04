@@ -18,18 +18,6 @@ alter table public.generations
 alter table public.generations enable row level security;
 
 drop policy if exists "Public generations are readable" on public.generations;
-create policy "Public generations are readable"
-  on public.generations
-  for select
-  to anon
-  using (true);
-
 drop policy if exists "Public generations are insertable" on public.generations;
-create policy "Public generations are insertable"
-  on public.generations
-  for insert
-  to anon
-  with check (true);
 
-grant usage on schema public to anon;
-grant select, insert on public.generations to anon;
+revoke select, insert, update, delete on public.generations from anon, authenticated;

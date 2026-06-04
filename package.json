@@ -7,14 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
+    "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
     "openai": "^4.104.0",
+    "postgres": "^3.4.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -23,6 +26,7 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.15.0",
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4.0.0",

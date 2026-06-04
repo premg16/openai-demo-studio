@@ -2,6 +2,7 @@
 .env
 .env*.local
 .next
+.playwright-mcp
 bun.lockb
 node_modules
 out

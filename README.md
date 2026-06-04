@@ -12,11 +12,11 @@ OpenAI Demo Studio turns a GitHub repository URL or pasted README into an immers
 4. The UI shows an analysis timeline while the app fetches, detects, designs, builds, and saves.
 5. `/api/analyze` calls the OpenAI Responses API with a strict JSON schema.
 6. The app renders a dashboard with Overview, Blueprint, Starter Pack, and Presentation tabs.
-7. The generation is saved in Supabase so it can appear in the recent history panel.
+7. The generation is saved in Supabase Postgres through Drizzle so it can appear in the recent history panel.
 
 ## OpenAI APIs Used
 
-The app uses the OpenAI Responses API because it is the current unified API for generating model responses and supports structured JSON output from the same endpoint. The model is configured as `gpt-4o` because the product needs strong developer-facing writing, reasoning over README content, and reliable structured output.
+The app uses the OpenAI Responses API because it is the unified endpoint for generating model responses and supports structured JSON output. The model is configured through `OPENAI_MODEL`, with the default kept in `src/lib/openai.ts`.
 
 The route uses `text.format.type = "json_schema"` so the response matches the expected object shape:
 
@@ -60,19 +60,25 @@ cp .env.example .env.local
 ```bash
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5-mini-2025-08-07
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+DATABASE_URL=postgresql://postgres.your-ref:your-password@aws-0-region.pooler.supabase.com:6543/postgres
 ```
 
 `OPENAI_MODEL` is optional. If it is empty, the app uses the default model configured in `src/lib/openai.ts`.
+`DATABASE_URL` must be the direct or pooled Supabase Postgres URI. Keep it server-side only and do not prefix it with `NEXT_PUBLIC_`.
 
-4. Create the Supabase table with either path:
+4. Create the Supabase table with either path.
 
 ```bash
 supabase db push
 ```
 
 or run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
+
+If you want Drizzle to push the schema from `src/db/schema.ts`, run:
+
+```bash
+bun run db:push
+```
 
 5. Start the app.
 
@@ -84,7 +90,7 @@ bun dev
 
 ## Supabase Table
 
-The app stores generations in a single public table:
+The app stores generations in a single table mapped in `src/db/schema.ts`:
 
 ```sql
 create extension if not exists pgcrypto;
@@ -102,13 +108,13 @@ create table if not exists public.generations (
 );
 ```
 
-For v1, history is public. Use the migration in `supabase/migrations` or the full SQL in `supabase/schema.sql` to add the canonical `generation` JSON column, keep the legacy columns, and enable row level security with explicit public read and insert policies for the anon role.
+Use the migration in `supabase/migrations` or the full SQL in `supabase/schema.sql` to add the canonical `generation` JSON column and keep the legacy columns for old saved rows. The app reads and writes through Drizzle on the server using `DATABASE_URL`.
 
 ## Deploy To Vercel
 
 1. Push the repo to GitHub.
 2. Import the repo in Vercel.
-3. Set the same three environment variables in the Vercel project settings.
+3. Set the same environment variables in the Vercel project settings.
 4. Deploy with the default Next.js settings.
 5. After deploy, test both input modes and confirm the history sidebar shows saved generations.
 
@@ -117,8 +123,7 @@ The repo includes `vercel.json` so Vercel uses Bun for install and build:
 ```bash
 vercel env add OPENAI_API_KEY
 vercel env add OPENAI_MODEL
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+vercel env add DATABASE_URL
 vercel deploy --prod
 ```
 
@@ -128,6 +133,8 @@ vercel deploy --prod
 bun dev
 bun run typecheck
 bun run build
+bun run db:generate
+bun run db:push
 ```
 
 ## Definition Of Done
@@ -138,8 +145,8 @@ bun run build
 - GitHub URL input fetches a real README.
 - `/api/analyze` returns valid structured JSON for that README.
 - Repo x-ray, demo paths, blueprint, starter pack, presentation mode, and export actions render correctly.
-- Generation saves to Supabase.
+- Generation saves to Supabase Postgres through Drizzle.
 - History sidebar shows past generations.
-- Vercel has the required environment variables.
+- Vercel has `OPENAI_API_KEY`, optional `OPENAI_MODEL`, and `DATABASE_URL`.
 - The README explains the app as a tutorial.
 - The repo is public on GitHub.
