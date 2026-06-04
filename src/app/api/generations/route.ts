@@ -32,7 +32,13 @@ export async function GET() {
     if (error) {
       console.error("Supabase history fetch failed", error);
       if (error.code === "PGRST205") {
-        return NextResponse.json([]);
+        return NextResponse.json(
+          {
+            error:
+              "Supabase generations table is not set up. Run the migration in supabase/migrations or the SQL in supabase/schema.sql.",
+          },
+          { status: 503 },
+        );
       }
 
       return NextResponse.json({ error: "Could not load generations" }, { status: 500 });
