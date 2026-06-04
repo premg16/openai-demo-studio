@@ -5,11 +5,15 @@ create table if not exists public.generations (
   created_at timestamptz not null default now(),
   repo_url text,
   readme_snippet text not null,
+  generation jsonb,
   sample_app jsonb not null,
   tutorial_outline jsonb not null,
   architecture_notes jsonb not null,
   deploy_checklist jsonb not null
 );
+
+alter table public.generations
+  add column if not exists generation jsonb;
 
 alter table public.generations enable row level security;
 

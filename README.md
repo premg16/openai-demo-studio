@@ -1,6 +1,6 @@
 # OpenAI Demo Studio
 
-OpenAI Demo Studio turns a GitHub repository URL or pasted README into four developer-facing outputs: a sample app idea, tutorial outline, architecture notes, and deploy checklist. It is built as a practical demo of the OpenAI Responses API with structured outputs, plus a reusable tool for developers evaluating how OpenAI can fit into an existing project.
+OpenAI Demo Studio turns a GitHub repository URL or pasted README into an immersive developer demo lab. It generates a repo x-ray, three OpenAI demo paths, an architecture blueprint, a starter code pack, exportable Markdown, and a presentation-ready pitch.
 
 ![Demo screenshot placeholder](./public/demo-placeholder.svg)
 
@@ -9,9 +9,10 @@ OpenAI Demo Studio turns a GitHub repository URL or pasted README into four deve
 1. Paste a public GitHub repository URL or paste raw README markdown.
 2. For GitHub URLs, the app fetches `README.md` from the repo's `main` branch, then falls back to `master`.
 3. The README text is truncated to 8,000 characters and sent to `/api/analyze`.
-4. `/api/analyze` calls the OpenAI Responses API with a strict JSON schema.
-5. The app renders four typed result cards in `/generate`.
-6. The generation is saved in Supabase so it can appear in the recent history panel.
+4. The UI shows an analysis timeline while the app fetches, detects, designs, builds, and saves.
+5. `/api/analyze` calls the OpenAI Responses API with a strict JSON schema.
+6. The app renders a dashboard with Overview, Blueprint, Starter Pack, and Presentation tabs.
+7. The generation is saved in Supabase so it can appear in the recent history panel.
 
 ## OpenAI APIs Used
 
@@ -21,12 +22,24 @@ The route uses `text.format.type = "json_schema"` so the response matches the ex
 
 ```ts
 {
-  sampleApp: { title, description, why },
-  tutorialOutline: string[],
-  architectureNotes: { apis, reasoning },
-  deployChecklist: string[]
+  repoXray: { framework, language, repoType, detectedFeatures },
+  demoPaths: [
+    { id, label, sampleApp, blueprint, starterPack, presentation }
+  ],
+  selectedPath: "portfolio",
+  apiMatch: [{ api, fit, score, reasoning }]
 }
 ```
+
+## Immersive Features
+
+1. The analysis timeline shows the current stage and the exact stage that failed.
+2. Repo X-Ray summarizes the framework, language, repo type, setup quality, deploy readiness, and detected features.
+3. Choose Your Demo Path lets you switch between Quick Win, Portfolio-Worthy, and Production-Grade without another API call.
+4. Blueprint shows the user flow, frontend, backend, OpenAI layer, storage, and deployment as an architecture map.
+5. Starter Pack gives files to create, install commands, environment variables, implementation steps, and code snippets.
+6. Presentation Mode opens a full-screen pitch view for the generated demo.
+7. Export actions copy Markdown, download Markdown, or copy a GitHub issue body.
 
 ## Local Setup
 
@@ -72,6 +85,7 @@ create table if not exists public.generations (
   created_at timestamptz not null default now(),
   repo_url text,
   readme_snippet text not null,
+  generation jsonb,
   sample_app jsonb not null,
   tutorial_outline jsonb not null,
   architecture_notes jsonb not null,
@@ -79,7 +93,7 @@ create table if not exists public.generations (
 );
 ```
 
-For v1, history is public. Use the full SQL in `supabase/schema.sql` to enable row level security with explicit public read and insert policies for the anon role.
+For v1, history is public. Use the full SQL in `supabase/schema.sql` to add the canonical `generation` JSON column, keep the legacy columns, and enable row level security with explicit public read and insert policies for the anon role.
 
 ## Deploy To Vercel
 
@@ -104,7 +118,7 @@ bun run build
 - The app runs on `localhost:3000`.
 - GitHub URL input fetches a real README.
 - `/api/analyze` returns valid structured JSON for that README.
-- All four result cards render correctly.
+- Repo x-ray, demo paths, blueprint, starter pack, presentation mode, and export actions render correctly.
 - Generation saves to Supabase.
 - History sidebar shows past generations.
 - Vercel has the required environment variables.

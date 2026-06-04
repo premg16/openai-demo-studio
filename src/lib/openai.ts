@@ -1,46 +1,223 @@
 import OpenAI from "openai";
-import type { DemoGeneration } from "@/lib/types";
+import { normalizeGeneration } from "@/lib/generation";
+import type { DemoGeneration, DemoPathId } from "@/lib/types";
+
+const stringArray = (minItems: number, maxItems: number) => ({
+  type: "array",
+  items: { type: "string" },
+  minItems,
+  maxItems,
+});
+
+const sampleAppSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    description: { type: "string" },
+    why: { type: "string" },
+  },
+  required: ["title", "description", "why"],
+  additionalProperties: false,
+} as const;
+
+const architectureNotesSchema = {
+  type: "object",
+  properties: {
+    apis: stringArray(1, 6),
+    reasoning: { type: "string" },
+  },
+  required: ["apis", "reasoning"],
+  additionalProperties: false,
+} as const;
+
+const blueprintSchema = {
+  type: "object",
+  properties: {
+    userFlow: { type: "string" },
+    frontend: { type: "string" },
+    backend: { type: "string" },
+    openaiLayer: { type: "string" },
+    storage: { type: "string" },
+    deployment: { type: "string" },
+  },
+  required: [
+    "userFlow",
+    "frontend",
+    "backend",
+    "openaiLayer",
+    "storage",
+    "deployment",
+  ],
+  additionalProperties: false,
+} as const;
+
+const beforeAfterSchema = {
+  type: "object",
+  properties: {
+    currentRepo: { type: "string" },
+    openaiEnhanced: { type: "string" },
+  },
+  required: ["currentRepo", "openaiEnhanced"],
+  additionalProperties: false,
+} as const;
+
+const starterPackSchema = {
+  type: "object",
+  properties: {
+    files: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          path: { type: "string" },
+          purpose: { type: "string" },
+          snippet: { type: "string" },
+        },
+        required: ["path", "purpose", "snippet"],
+        additionalProperties: false,
+      },
+      minItems: 2,
+      maxItems: 5,
+    },
+    envVars: stringArray(1, 6),
+    installCommands: stringArray(1, 5),
+    implementationSteps: stringArray(4, 8),
+  },
+  required: ["files", "envVars", "installCommands", "implementationSteps"],
+  additionalProperties: false,
+} as const;
+
+const miniPreviewSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    screenType: { type: "string" },
+    primaryAction: { type: "string" },
+    panels: stringArray(3, 5),
+  },
+  required: ["title", "screenType", "primaryAction", "panels"],
+  additionalProperties: false,
+} as const;
+
+const presentationSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    problem: { type: "string" },
+    demoIdea: { type: "string" },
+    architecture: { type: "string" },
+    buildSteps: stringArray(4, 8),
+    deployPlan: stringArray(4, 8),
+  },
+  required: [
+    "title",
+    "problem",
+    "demoIdea",
+    "architecture",
+    "buildSteps",
+    "deployPlan",
+  ],
+  additionalProperties: false,
+} as const;
+
+const demoPathSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string", enum: ["quick_win", "portfolio", "production"] },
+    label: { type: "string" },
+    summary: { type: "string" },
+    sampleApp: sampleAppSchema,
+    effort: { type: "string", enum: ["Low", "Medium", "High"] },
+    wowFactor: { type: "integer", minimum: 1, maximum: 5 },
+    apiFit: { type: "string", enum: ["Strong", "Good", "Experimental"] },
+    tutorialOutline: stringArray(4, 8),
+    architectureNotes: architectureNotesSchema,
+    deployChecklist: stringArray(4, 8),
+    blueprint: blueprintSchema,
+    beforeAfter: beforeAfterSchema,
+    starterPack: starterPackSchema,
+    miniPreview: miniPreviewSchema,
+    presentation: presentationSchema,
+  },
+  required: [
+    "id",
+    "label",
+    "summary",
+    "sampleApp",
+    "effort",
+    "wowFactor",
+    "apiFit",
+    "tutorialOutline",
+    "architectureNotes",
+    "deployChecklist",
+    "blueprint",
+    "beforeAfter",
+    "starterPack",
+    "miniPreview",
+    "presentation",
+  ],
+  additionalProperties: false,
+} as const;
 
 const generationSchema = {
   type: "object",
   properties: {
-    sampleApp: {
+    repoXray: {
       type: "object",
       properties: {
-        title: { type: "string" },
-        description: { type: "string" },
-        why: { type: "string" },
+        framework: { type: "string" },
+        language: { type: "string" },
+        repoType: { type: "string" },
+        detectedFeatures: stringArray(3, 8),
+        setupQuality: { type: "string" },
+        deployReadiness: { type: "string" },
       },
-      required: ["title", "description", "why"],
+      required: [
+        "framework",
+        "language",
+        "repoType",
+        "detectedFeatures",
+        "setupQuality",
+        "deployReadiness",
+      ],
       additionalProperties: false,
     },
-    tutorialOutline: {
+    demoPaths: {
       type: "array",
-      items: { type: "string" },
-      minItems: 4,
-      maxItems: 10,
+      items: demoPathSchema,
+      minItems: 3,
+      maxItems: 3,
     },
-    architectureNotes: {
-      type: "object",
-      properties: {
-        apis: {
-          type: "array",
-          items: { type: "string" },
-          minItems: 1,
+    selectedPath: {
+      type: "string",
+      enum: ["quick_win", "portfolio", "production"],
+    },
+    apiMatch: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          api: { type: "string" },
+          fit: { type: "string", enum: ["Strong", "Good", "Experimental"] },
+          score: { type: "integer", minimum: 1, maximum: 100 },
+          reasoning: { type: "string" },
         },
-        reasoning: { type: "string" },
+        required: ["api", "fit", "score", "reasoning"],
+        additionalProperties: false,
       },
-      required: ["apis", "reasoning"],
-      additionalProperties: false,
+      minItems: 2,
+      maxItems: 6,
     },
-    deployChecklist: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 4,
-      maxItems: 10,
-    },
+    sampleApp: sampleAppSchema,
+    tutorialOutline: stringArray(4, 8),
+    architectureNotes: architectureNotesSchema,
+    deployChecklist: stringArray(4, 8),
   },
   required: [
+    "repoXray",
+    "demoPaths",
+    "selectedPath",
+    "apiMatch",
     "sampleApp",
     "tutorialOutline",
     "architectureNotes",
@@ -49,15 +226,20 @@ const generationSchema = {
   additionalProperties: false,
 } as const;
 
-const systemPrompt = `You are a developer experience engineer at OpenAI. A developer has given you a README from a GitHub repository. Your job is to help them understand how to extend this project with OpenAI APIs.
+const systemPrompt = `You are a developer experience engineer at OpenAI. A developer has given you a README from a GitHub repository. Your job is to turn it into an immersive developer demo lab.
 
-Generate four outputs:
-1. A sample app idea that builds on this repo using at least one OpenAI API
-2. A step-by-step tutorial outline for building that sample app
-3. Architecture notes explaining which OpenAI APIs to use and why
-4. A practical deploy checklist
+Generate a structured product analysis that helps a developer decide what OpenAI-powered demo to build, how to build it, and how to present it.
 
-Be specific. Name current OpenAI APIs such as the Responses API, gpt-4o, Realtime API, Whisper, DALL-E 3, and Embeddings. Prefer the Responses API and gpt-4o for text generation unless another API is a better fit. Do not recommend older Completions API patterns. Keep every array item plain text, with no markdown bullets, no numbered prefixes, and no nested fragments. Write for developers who know how to code but are new to OpenAI.`;
+Rules:
+- Return exactly three demo paths: Quick Win, Portfolio-Worthy, and Production-Grade.
+- Set selectedPath to "portfolio" unless the user explicitly asks otherwise.
+- Keep every array item plain text, with no markdown bullets, no numbered prefixes, and no nested fragments.
+- Recommend current OpenAI APIs such as the Responses API, Realtime API, File Search, Web Search, Embeddings, image generation, and Whisper only when they fit the repo.
+- Prefer the Responses API for structured generation and tool-using workflows.
+- Do not recommend older Completions API patterns.
+- Starter code snippets must be short, practical, and safe to display as text.
+- The mini preview is a static UI concept only. Do not output HTML.
+- Write for developers who know how to code but are new to OpenAI.`;
 
 let client: OpenAI | null = null;
 
@@ -77,9 +259,10 @@ function getOpenAIClient() {
 
 export async function analyzeRepo(
   readmeText: string,
+  preferredPath: DemoPathId = "portfolio",
 ): Promise<DemoGeneration> {
   const response = await getOpenAIClient().responses.create({
-    model: "gpt-4o",
+    model: process.env.OPENAI_MODEL || "gpt-5-mini-2025-08-07",
     input: [
       {
         role: "system",
@@ -87,7 +270,11 @@ export async function analyzeRepo(
       },
       {
         role: "user",
-        content: `README:\n\n${readmeText}`,
+        content: `Preferred path: ${preferredPath}
+
+README:
+
+${readmeText}`,
       },
     ],
     text: {
@@ -106,5 +293,5 @@ export async function analyzeRepo(
     throw new Error("OpenAI response did not include output text");
   }
 
-  return JSON.parse(outputText) as DemoGeneration;
+  return normalizeGeneration(JSON.parse(outputText) as DemoGeneration);
 }

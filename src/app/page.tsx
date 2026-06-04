@@ -12,8 +12,8 @@ export default function Home() {
             Turn any repo into a developer demo
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)] md:text-xl">
-            Paste a GitHub URL. Get a sample app idea, tutorial outline,
-            architecture notes, and deploy checklist, powered by OpenAI.
+            Paste a GitHub URL. Get a repo x-ray, demo paths, architecture
+            blueprint, starter code pack, and presentation-ready pitch.
           </p>
         </div>
 
