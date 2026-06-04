@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "OpenAI Demo Studio",
   description:
-    "Turn a GitHub repo or README into an immersive OpenAI developer demo lab.",
+    "Find the best OpenAI feature for any repo and turn it into a buildable demo plan.",
 };
 
 export default function RootLayout({
