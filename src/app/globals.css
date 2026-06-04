@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f3ea;
+  --foreground: #171715;
+  --muted: #69665d;
+  --panel: #fffdf6;
+  --panel-strong: #ece6d7;
+  --border: #d8cfbd;
+  --accent: #0b6b5b;
+  --accent-strong: #084f44;
+  --orange: #d75a2b;
+  --blue: #265f9f;
+  --rose: #a23d5d;
+  --shadow: 0 18px 60px rgba(23, 23, 21, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    linear-gradient(90deg, rgba(23, 23, 21, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(23, 23, 21, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(215, 90, 43, 0.18), transparent 34rem),
+    radial-gradient(circle at 90% 8%, rgba(38, 95, 159, 0.16), transparent 30rem),
+    var(--background);
+  background-size: 42px 42px, 42px 42px, auto, auto, auto;
+  color: var(--foreground);
+  font-family:
+    "Avenir Next", "IBM Plex Sans", "Segoe UI", ui-sans-serif, system-ui,
+    sans-serif;
+  letter-spacing: 0;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: rgba(11, 107, 91, 0.2);
+}
+
+@utility page-shell {
+  min-height: 100vh;
+}
+
+@utility mono {
+  font-family: "SF Mono", "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@utility focus-ring {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, white);
+  outline-offset: 2px;
+}

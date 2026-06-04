@@ -1,0 +1,55 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">OpenAI Demo Studio screenshot placeholder</title>
+  <desc id="desc">A placeholder showing the homepage input and generated result cards.</desc>
+  <rect width="1280" height="720" fill="#F6F3EA"/>
+  <path d="M0 0H1280V720H0V0Z" fill="#F6F3EA"/>
+  <g opacity="0.16">
+    <path d="M0 72H1280" stroke="#171715"/>
+    <path d="M0 144H1280" stroke="#171715"/>
+    <path d="M0 216H1280" stroke="#171715"/>
+    <path d="M0 288H1280" stroke="#171715"/>
+    <path d="M0 360H1280" stroke="#171715"/>
+    <path d="M0 432H1280" stroke="#171715"/>
+    <path d="M0 504H1280" stroke="#171715"/>
+    <path d="M0 576H1280" stroke="#171715"/>
+    <path d="M0 648H1280" stroke="#171715"/>
+    <path d="M80 0V720" stroke="#171715"/>
+    <path d="M160 0V720" stroke="#171715"/>
+    <path d="M240 0V720" stroke="#171715"/>
+    <path d="M320 0V720" stroke="#171715"/>
+    <path d="M400 0V720" stroke="#171715"/>
+    <path d="M480 0V720" stroke="#171715"/>
+    <path d="M560 0V720" stroke="#171715"/>
+    <path d="M640 0V720" stroke="#171715"/>
+    <path d="M720 0V720" stroke="#171715"/>
+    <path d="M800 0V720" stroke="#171715"/>
+    <path d="M880 0V720" stroke="#171715"/>
+    <path d="M960 0V720" stroke="#171715"/>
+    <path d="M1040 0V720" stroke="#171715"/>
+    <path d="M1120 0V720" stroke="#171715"/>
+    <path d="M1200 0V720" stroke="#171715"/>
+  </g>
+  <rect x="112" y="94" width="470" height="88" fill="#171715"/>
+  <text x="140" y="145" fill="#FFFDF6" font-family="Avenir Next, Segoe UI, sans-serif" font-size="36" font-weight="800">OpenAI Demo Studio</text>
+  <rect x="112" y="238" width="500" height="250" fill="#FFFDF6" stroke="#171715" stroke-width="3"/>
+  <rect x="134" y="260" width="214" height="50" fill="#171715"/>
+  <text x="164" y="293" fill="#FFFDF6" font-family="Avenir Next, Segoe UI, sans-serif" font-size="18" font-weight="700">GitHub URL</text>
+  <rect x="360" y="260" width="214" height="50" fill="#ECE6D7" stroke="#D8CFBD" stroke-width="2"/>
+  <text x="395" y="293" fill="#69665D" font-family="Avenir Next, Segoe UI, sans-serif" font-size="18" font-weight="700">Paste README</text>
+  <rect x="134" y="330" width="440" height="58" fill="#FFFFFF" stroke="#171715" stroke-width="2"/>
+  <text x="158" y="366" fill="#69665D" font-family="Avenir Next, Segoe UI, sans-serif" font-size="18">https://github.com/owner/repo</text>
+  <rect x="134" y="410" width="440" height="56" fill="#0B6B5B"/>
+  <text x="294" y="446" fill="#FFFFFF" font-family="Avenir Next, Segoe UI, sans-serif" font-size="19" font-weight="800">Analyze Repo</text>
+  <rect x="694" y="112" width="474" height="112" fill="#FFFDF6" stroke="#171715" stroke-width="3"/>
+  <rect x="694" y="256" width="474" height="112" fill="#FFFDF6" stroke="#171715" stroke-width="3"/>
+  <rect x="694" y="400" width="474" height="112" fill="#FFFDF6" stroke="#171715" stroke-width="3"/>
+  <rect x="694" y="544" width="474" height="112" fill="#FFFDF6" stroke="#171715" stroke-width="3"/>
+  <circle cx="735" cy="154" r="18" fill="#F2C84B" stroke="#171715" stroke-width="2"/>
+  <circle cx="735" cy="298" r="18" fill="#265F9F" stroke="#171715" stroke-width="2"/>
+  <circle cx="735" cy="442" r="18" fill="#D75A2B" stroke="#171715" stroke-width="2"/>
+  <circle cx="735" cy="586" r="18" fill="#0B6B5B" stroke="#171715" stroke-width="2"/>
+  <text x="770" y="160" fill="#171715" font-family="Avenir Next, Segoe UI, sans-serif" font-size="26" font-weight="800">Sample App</text>
+  <text x="770" y="304" fill="#171715" font-family="Avenir Next, Segoe UI, sans-serif" font-size="26" font-weight="800">Tutorial Outline</text>
+  <text x="770" y="448" fill="#171715" font-family="Avenir Next, Segoe UI, sans-serif" font-size="26" font-weight="800">Architecture Notes</text>
+  <text x="770" y="592" fill="#171715" font-family="Avenir Next, Segoe UI, sans-serif" font-size="26" font-weight="800">Deploy Checklist</text>
+</svg>
