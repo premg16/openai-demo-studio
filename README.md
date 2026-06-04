@@ -85,6 +85,8 @@ bun run db:push
 
 Use `bun run db:generate` only after changing `src/db/schema.ts` and wanting a new migration file. Use `bun run db:migrate` only when you want Drizzle to apply generated migration files instead of pushing the schema directly.
 
+Drizzle stores local migration snapshots in `supabase/migrations/meta`. When `bun run db:migrate` runs, Drizzle also creates a database-side migration log table at `drizzle.__drizzle_migrations` and records which SQL files have already been applied. `bun run db:push` does not use that migration log table because it pushes the current schema directly.
+
 5. Start the app.
 
 ```bash
