@@ -65,6 +65,7 @@ DATABASE_URL=postgresql://postgres.your-ref:your-password@aws-0-region.pooler.su
 
 `OPENAI_MODEL` is optional. If it is empty, the app uses the default model configured in `src/lib/openai.ts`.
 `DATABASE_URL` must be the direct or pooled Supabase Postgres URI. Keep it server-side only and do not prefix it with `NEXT_PUBLIC_`.
+If your database password contains special characters, URL-encode the password and keep the full value quoted in `.env.local`.
 
 4. Create the Supabase table with either path.
 
@@ -74,11 +75,13 @@ supabase db push
 
 or run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
 
-If you want Drizzle to push the schema from `src/db/schema.ts`, run:
+For local setup, push the current Drizzle schema from `src/db/schema.ts`:
 
 ```bash
 bun run db:push
 ```
+
+Use `bun run db:generate` only after changing `src/db/schema.ts` and wanting a new migration file. Use `bun run db:migrate` only when you want Drizzle to apply generated migration files instead of pushing the schema directly.
 
 5. Start the app.
 
@@ -135,6 +138,7 @@ bun run typecheck
 bun run build
 bun run db:generate
 bun run db:push
+bun run db:migrate
 ```
 
 ## Definition Of Done
