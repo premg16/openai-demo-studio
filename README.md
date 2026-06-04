@@ -60,11 +60,12 @@ cp .env.example .env.local
 ```bash
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5-mini-2025-08-07
-DATABASE_URL=postgresql://postgres.your-ref:your-password@aws-0-region.pooler.supabase.com:6543/postgres
+DATABASE_URL="postgresql://postgres.your-ref:your-password@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require"
 ```
 
 `OPENAI_MODEL` is optional. If it is empty, the app uses the default model configured in `src/lib/openai.ts`.
-`DATABASE_URL` must be the direct or pooled Supabase Postgres URI. Keep it server-side only and do not prefix it with `NEXT_PUBLIC_`.
+`DATABASE_URL` should be the Supabase Shared Pooler URI from Project Settings, Database, Connect. Keep it server-side only and do not prefix it with `NEXT_PUBLIC_`.
+The direct URI `db.your-ref.supabase.co:5432` can fail on IPv4-only networks because Supabase direct database connections are IPv6-only unless the project has the IPv4 add-on.
 If your database password contains special characters, URL-encode the password and keep the full value quoted in `.env.local`.
 
 4. Create the Supabase table with either path.
@@ -78,6 +79,7 @@ or run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
 For local setup, push the current Drizzle schema from `src/db/schema.ts`:
 
 ```bash
+bun run db:check
 bun run db:push
 ```
 
@@ -136,6 +138,7 @@ vercel deploy --prod
 bun dev
 bun run typecheck
 bun run build
+bun run db:check
 bun run db:generate
 bun run db:push
 bun run db:migrate
