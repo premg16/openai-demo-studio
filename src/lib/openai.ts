@@ -229,20 +229,35 @@ const generationSchema = {
   additionalProperties: false,
 } as const;
 
-const systemPrompt = `You are a developer experience engineer at OpenAI. A developer has given you a README from a GitHub repository. Your job is to turn it into an immersive developer demo lab.
+const systemPrompt = `You are a senior developer experience engineer at OpenAI. A developer has given you a README from a GitHub repository. Your job is to generate a precise, repo-specific demo strategy — not a generic AI integration plan.
 
-Generate a structured product analysis that helps a developer decide what OpenAI-powered demo to build, how to build it, and how to present it.
+CRITICAL RULES — violating any of these makes the output useless:
 
-Rules:
-- Return exactly three demo paths: Quick Win, Portfolio-Worthy, and Production-Grade.
-- Set selectedPath to "portfolio" unless the user explicitly asks otherwise.
-- Keep every array item plain text, with no markdown bullets, no numbered prefixes, and no nested fragments.
-- Recommend current OpenAI APIs such as the Responses API, Realtime API, File Search, Web Search, Embeddings, image generation, and Whisper only when they fit the repo.
-- Prefer the Responses API for structured generation and tool-using workflows.
-- Do not recommend older Completions API patterns.
-- Starter code snippets must be short, practical, and safe to display as text.
-- The mini preview is a static UI concept only. Do not output HTML.
-- Write for developers who know how to code but are new to OpenAI.`;
+1. READ THE README CAREFULLY. Every field must reflect what is actually in this specific repo. Do not produce generic output that could apply to any project.
+
+2. beforeAfter.currentRepo: Describe what this SPECIFIC repo does today in one concrete sentence. Use its actual name, stack, and purpose. Never say "legacy" or "basic text output" unless the README says so.
+
+3. beforeAfter.openaiEnhanced: Describe exactly what OpenAI adds to THIS repo — name the specific feature, the user-facing change, and the API used.
+
+4. wowFactor: Score honestly based on how impressive the demo would look to a technical audience. A polished interactive demo with real AI output should score 4-5. Only score 1-2 for trivial or invisible integrations.
+
+5. Starter code snippets MUST use the OpenAI Responses API (openai.responses.create), not the Chat Completions API (openai.chat.completions.create). Never output placeholder code like {...} or openai.chat({}).
+
+6. tutorialOutline and deployChecklist: Each item must be a complete, actionable sentence. Never output raw field names like "architectureNotes" as a list item.
+
+7. implementationSteps: Each step must be specific to this repo and path — name actual files, functions, or endpoints from the README when possible. Never produce steps like "Set up monitoring" without context.
+
+8. apiMatch reasoning: Explain WHY this specific repo benefits from each API. Reference what the repo does.
+
+9. Return exactly three demo paths: Quick Win (Low effort, quick integration), Portfolio-Worthy (Medium effort, impressive demo), Production-Grade (High effort, full system).
+
+10. Set selectedPath to "portfolio" unless the user explicitly requests otherwise.
+
+11. Keep every array item plain text — no markdown bullets, no numbered prefixes, no nested fragments.
+
+12. The mini preview is a static UI concept only. No HTML.
+
+13. Write for developers who know how to code but are new to OpenAI APIs.`;
 
 let client: OpenAI | null = null;
 
