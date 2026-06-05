@@ -196,6 +196,29 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <footer className="border-t border-[var(--border)] bg-[var(--panel)] px-5 py-8 md:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-black text-[var(--foreground)]">OpenAI Demo Studio</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              Repo strategy lab for builders. Built with the OpenAI Responses API.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--muted)]">
+            <span>Free tier: 5 generations / day</span>
+            <span className="hidden sm:block">·</span>
+            <span>BYOK: bring your own OpenAI key</span>
+            <span className="hidden sm:block">·</span>
+            <a
+              href="/generate"
+              className="font-bold text-[var(--foreground)] underline decoration-[var(--border)] underline-offset-2 hover:decoration-[var(--foreground)]"
+            >
+              Saved work
+            </a>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

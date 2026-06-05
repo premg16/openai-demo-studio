@@ -116,6 +116,13 @@ export type AnalyzeRequest = {
   preferredPath?: DemoPathId;
   openaiApiKey?: string;
   model?: string;
+  noSave?: boolean;
+};
+
+export type RateLimitInfo = {
+  limit: number;
+  remaining: number;
+  resetAt: string;
 };
 
 export type ApiError = {

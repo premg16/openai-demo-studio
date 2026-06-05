@@ -1,7 +1,11 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import postgres from "postgres";
 
 function loadLocalEnv() {
+  if (!existsSync(".env.local")) {
+    return;
+  }
+
   for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
     const trimmed = line.trim();
 

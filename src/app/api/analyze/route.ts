@@ -80,12 +80,15 @@ export async function POST(request: Request) {
     };
 
     let saved: GenerationRow | null = null;
+    const shouldSave = !body.noSave;
 
-    try {
-      const savedRow = await saveGeneration(rowBase);
-      saved = savedRow ? drizzleRowToGeneration(savedRow) : null;
-    } catch (error) {
-      console.error("Generation save failed", error);
+    if (shouldSave) {
+      try {
+        const savedRow = await saveGeneration(rowBase);
+        saved = savedRow ? drizzleRowToGeneration(savedRow) : null;
+      } catch (error) {
+        console.error("Generation save failed", error);
+      }
     }
 
     const response: GenerationRow = {

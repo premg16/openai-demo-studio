@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
   Boxes,
+  Check,
+  CheckCircle2,
   Clipboard,
   Code2,
   Download,
@@ -13,6 +15,7 @@ import {
   Gauge,
   History,
   LayoutDashboard,
+  ListChecks,
   Loader2,
   MonitorPlay,
   Network,
@@ -42,16 +45,9 @@ const tabs: { id: LabTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 function readLatestGeneration() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
+  if (typeof window === "undefined") return null;
   const raw = sessionStorage.getItem("latest-generation");
-
-  if (!raw) {
-    return null;
-  }
-
+  if (!raw) return null;
   try {
     return JSON.parse(raw) as GenerationRow;
   } catch {
@@ -74,12 +70,7 @@ function formatMarkdown(generation: GenerationRow, path: DemoPath) {
     .join("\n");
   const starterFiles = path.starterPack.files
     .map(
-      (file) => `### ${file.path}
-${file.purpose}
-
-\`\`\`ts
-${file.snippet}
-\`\`\``,
+      (file) => `### ${file.path}\n${file.purpose}\n\n\`\`\`ts\n${file.snippet}\n\`\`\``,
     )
     .join("\n\n");
 
@@ -124,6 +115,9 @@ ${path.starterPack.installCommands.map((item) => `- ${item}`).join("\n")}
 Environment variables:
 ${path.starterPack.envVars.map((item) => `- ${item}`).join("\n")}
 
+## Implementation Steps
+${path.starterPack.implementationSteps.map((step, i) => `${i + 1}. ${cleanListText(step)}`).join("\n")}
+
 ${starterFiles}
 
 ## Tutorial Outline
@@ -152,9 +146,7 @@ function StatBadge({
 
   return (
     <div className={`border border-[var(--foreground)] p-3 ${tones[tone]}`}>
-      <p className="mono text-[11px] uppercase tracking-[0.16em] opacity-70">
-        {label}
-      </p>
+      <p className="mono text-[11px] uppercase tracking-[0.16em] opacity-70">{label}</p>
       <p className="mt-1 text-sm font-black">{value}</p>
     </div>
   );
@@ -210,9 +202,7 @@ function PathPicker({
           }`}
         >
           <span className="block text-sm font-black">{path.label}</span>
-          <span className="mt-1 block text-xs leading-5 opacity-80">
-            {path.summary}
-          </span>
+          <span className="mt-1 block text-xs leading-5 opacity-80">{path.summary}</span>
         </button>
       ))}
     </div>
@@ -225,16 +215,8 @@ function RepoXrayPanel({ generation }: { generation: GenerationRow }) {
       <StatBadge label="Framework" value={generation.repoXray.framework} />
       <StatBadge label="Language" value={generation.repoXray.language} tone="blue" />
       <StatBadge label="Repo type" value={generation.repoXray.repoType} tone="green" />
-      <StatBadge
-        label="Setup quality"
-        value={generation.repoXray.setupQuality}
-        tone="orange"
-      />
-      <StatBadge
-        label="Deploy readiness"
-        value={generation.repoXray.deployReadiness}
-        tone="green"
-      />
+      <StatBadge label="Setup quality" value={generation.repoXray.setupQuality} tone="orange" />
+      <StatBadge label="Deploy readiness" value={generation.repoXray.deployReadiness} tone="green" />
       <div className="border border-[var(--foreground)] bg-white p-3">
         <p className="mono text-[11px] uppercase tracking-[0.16em] text-[var(--muted)]">
           Detected features
@@ -254,13 +236,7 @@ function RepoXrayPanel({ generation }: { generation: GenerationRow }) {
   );
 }
 
-function ApiMatchRail({
-  apiMatch,
-  path,
-}: {
-  apiMatch: ApiMatch[];
-  path: DemoPath;
-}) {
+function ApiMatchRail({ apiMatch, path }: { apiMatch: ApiMatch[]; path: DemoPath }) {
   return (
     <aside className="grid gap-3 lg:sticky lg:top-6 lg:self-start">
       <StatBadge label="Effort" value={path.effort} tone="orange" />
@@ -279,10 +255,7 @@ function ApiMatchRail({
                 <span className="mono text-xs">{item.score}/100</span>
               </div>
               <div className="mt-2 h-2 border border-[var(--foreground)] bg-[var(--panel-strong)]">
-                <div
-                  className="h-full bg-[var(--accent)]"
-                  style={{ width: `${item.score}%` }}
-                />
+                <div className="h-full bg-[var(--accent)]" style={{ width: `${item.score}%` }} />
               </div>
               <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
                 {item.fit}: {item.reasoning}
@@ -295,13 +268,7 @@ function ApiMatchRail({
   );
 }
 
-function OverviewTab({
-  generation,
-  path,
-}: {
-  generation: GenerationRow;
-  path: DemoPath;
-}) {
+function OverviewTab({ generation, path }: { generation: GenerationRow; path: DemoPath }) {
   return (
     <div className="grid gap-5">
       <SectionShell title="Repo X-Ray" icon={<Boxes size={20} />}>
@@ -314,9 +281,7 @@ function OverviewTab({
             <p className="mono text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
               Current repo
             </p>
-            <p className="mt-2 leading-7 text-[var(--muted)]">
-              {path.beforeAfter.currentRepo}
-            </p>
+            <p className="mt-2 leading-7 text-[var(--muted)]">{path.beforeAfter.currentRepo}</p>
           </div>
           <div className="border border-[var(--foreground)] bg-[#dcebd2] p-4">
             <p className="mono text-xs uppercase tracking-[0.16em] text-[var(--accent-strong)]">
@@ -336,9 +301,7 @@ function OverviewTab({
               <p className="mono text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
                 {path.miniPreview.screenType}
               </p>
-              <h3 className="mt-1 text-2xl font-black">
-                {path.miniPreview.title}
-              </h3>
+              <h3 className="mt-1 text-2xl font-black">{path.miniPreview.title}</h3>
             </div>
             <button
               type="button"
@@ -433,15 +396,28 @@ function StarterTab({ path }: { path: DemoPath }) {
         </div>
       </SectionShell>
 
+      {path.starterPack.implementationSteps.length > 0 ? (
+        <SectionShell title="Implementation Steps" icon={<ListChecks size={20} />}>
+          <ol className="grid gap-3">
+            {path.starterPack.implementationSteps.map((step, index) => (
+              <li key={index} className="flex gap-4 border border-[var(--border)] bg-white p-4">
+                <span className="mono grid size-7 shrink-0 place-items-center border border-[var(--foreground)] bg-[var(--foreground)] text-xs font-black text-[var(--panel)]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <p className="leading-7 text-[var(--foreground)]">{cleanListText(step)}</p>
+              </li>
+            ))}
+          </ol>
+        </SectionShell>
+      ) : null}
+
       <SectionShell title="Files To Create" icon={<FileText size={20} />}>
         <div className="grid gap-3">
           {path.starterPack.files.map((file) => (
             <div key={file.path} className="border border-[var(--border)] bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="mono text-sm font-black">{file.path}</h3>
-                <span className="text-xs font-bold text-[var(--muted)]">
-                  {file.purpose}
-                </span>
+                <span className="text-xs font-bold text-[var(--muted)]">{file.purpose}</span>
               </div>
               <pre className="mono mt-3 overflow-x-auto border border-[var(--foreground)] bg-[var(--foreground)] p-3 text-xs leading-5 text-[var(--panel)]">
                 <code>{file.snippet}</code>
@@ -450,17 +426,45 @@ function StarterTab({ path }: { path: DemoPath }) {
           ))}
         </div>
       </SectionShell>
+
+      {path.tutorialOutline.length > 0 ? (
+        <SectionShell title="Tutorial Outline" icon={<FileText size={20} />}>
+          <ul className="grid gap-2">
+            {path.tutorialOutline.map((item, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-3 border border-[var(--border)] bg-white px-4 py-3"
+              >
+                <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--accent)]" size={17} aria-hidden="true" />
+                <span className="leading-7 text-[var(--foreground)]">{cleanListText(item)}</span>
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
+      ) : null}
+
+      {path.deployChecklist.length > 0 ? (
+        <SectionShell title="Deploy Checklist" icon={<CheckCircle2 size={20} />}>
+          <ul className="grid gap-2">
+            {path.deployChecklist.map((item, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-3 border border-[var(--border)] bg-white px-4 py-3"
+              >
+                <span className="mono mt-0.5 shrink-0 text-xs font-black text-[var(--muted)]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="leading-7 text-[var(--foreground)]">{cleanListText(item)}</span>
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
+      ) : null}
     </div>
   );
 }
 
-function PresentationTab({
-  path,
-  onOpen,
-}: {
-  path: DemoPath;
-  onOpen: () => void;
-}) {
+function PresentationTab({ path, onOpen }: { path: DemoPath; onOpen: () => void }) {
   const slides = [
     ["Problem", path.presentation.problem],
     ["Demo idea", path.presentation.demoIdea],
@@ -483,9 +487,7 @@ function PresentationTab({
       <div className="grid gap-3 md:grid-cols-3">
         {slides.map(([title, body]) => (
           <div key={title} className="min-h-40 border border-[var(--foreground)] bg-white p-4">
-            <p className="mono text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-              {title}
-            </p>
+            <p className="mono text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{title}</p>
             <p className="mt-3 leading-7 text-[var(--foreground)]">{body}</p>
           </div>
         ))}
@@ -494,6 +496,8 @@ function PresentationTab({
   );
 }
 
+type CopyState = "idle" | "copied" | "error";
+
 function ExportButtons({
   generation,
   path,
@@ -501,18 +505,32 @@ function ExportButtons({
   generation: GenerationRow;
   path: DemoPath;
 }) {
-  const [message, setMessage] = useState("");
+  const [mdState, setMdState] = useState<CopyState>("idle");
+  const [issueState, setIssueState] = useState<CopyState>("idle");
+  const [dlDone, setDlDone] = useState(false);
   const markdown = useMemo(() => formatMarkdown(generation, path), [generation, path]);
 
-  async function copy(text: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setMessage(`${label} copied`);
-    } catch {
-      setMessage("Clipboard unavailable");
-    }
+  function flash(setter: React.Dispatch<React.SetStateAction<CopyState>>, state: CopyState) {
+    setter(state);
+    window.setTimeout(() => setter("idle"), 2000);
+  }
 
-    window.setTimeout(() => setMessage(""), 1800);
+  async function copyMd() {
+    try {
+      await navigator.clipboard.writeText(markdown);
+      flash(setMdState, "copied");
+    } catch {
+      flash(setMdState, "error");
+    }
+  }
+
+  async function copyIssue() {
+    try {
+      await navigator.clipboard.writeText(markdown);
+      flash(setIssueState, "copied");
+    } catch {
+      flash(setIssueState, "error");
+    }
   }
 
   function downloadMarkdown() {
@@ -523,99 +541,247 @@ function ExportButtons({
     anchor.download = "openai-demo-studio-plan.md";
     anchor.click();
     URL.revokeObjectURL(url);
-    setMessage("Markdown downloaded");
-    window.setTimeout(() => setMessage(""), 1800);
+    setDlDone(true);
+    window.setTimeout(() => setDlDone(false), 2000);
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
-        onClick={() => copy(markdown, "Markdown")}
-        className="inline-flex min-h-10 items-center gap-2 border border-[var(--foreground)] bg-[var(--panel)] px-3 text-sm font-black"
+        onClick={copyMd}
+        className={`inline-flex min-h-10 items-center gap-2 border px-3 text-sm font-black transition ${
+          mdState === "copied"
+            ? "border-[var(--accent)] bg-[#dcebd2] text-[var(--accent-strong)]"
+            : mdState === "error"
+              ? "border-[var(--orange)] bg-[#fff3ec] text-[var(--orange)]"
+              : "border-[var(--foreground)] bg-[var(--panel)]"
+        }`}
       >
-        <Clipboard size={16} aria-hidden="true" />
-        Copy Markdown
+        {mdState === "copied" ? <Check size={16} aria-hidden="true" /> : <Clipboard size={16} aria-hidden="true" />}
+        {mdState === "copied" ? "Copied!" : mdState === "error" ? "Failed" : "Copy Markdown"}
       </button>
+
       <button
         type="button"
         onClick={downloadMarkdown}
-        className="inline-flex min-h-10 items-center gap-2 border border-[var(--foreground)] bg-[var(--panel)] px-3 text-sm font-black"
+        className={`inline-flex min-h-10 items-center gap-2 border px-3 text-sm font-black transition ${
+          dlDone
+            ? "border-[var(--accent)] bg-[#dcebd2] text-[var(--accent-strong)]"
+            : "border-[var(--foreground)] bg-[var(--panel)]"
+        }`}
       >
-        <Download size={16} aria-hidden="true" />
-        Download
+        {dlDone ? <Check size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
+        {dlDone ? "Downloaded!" : "Download"}
       </button>
+
       <button
         type="button"
-        onClick={() => copy(markdown, "GitHub issue body")}
-        className="inline-flex min-h-10 items-center gap-2 border border-[var(--foreground)] bg-[var(--panel)] px-3 text-sm font-black"
+        onClick={copyIssue}
+        className={`inline-flex min-h-10 items-center gap-2 border px-3 text-sm font-black transition ${
+          issueState === "copied"
+            ? "border-[var(--accent)] bg-[#dcebd2] text-[var(--accent-strong)]"
+            : issueState === "error"
+              ? "border-[var(--orange)] bg-[#fff3ec] text-[var(--orange)]"
+              : "border-[var(--foreground)] bg-[var(--panel)]"
+        }`}
       >
-        <FileText size={16} aria-hidden="true" />
-        Copy Issue
+        {issueState === "copied" ? <Check size={16} aria-hidden="true" /> : <FileText size={16} aria-hidden="true" />}
+        {issueState === "copied" ? "Copied!" : issueState === "error" ? "Failed" : "Copy Issue"}
       </button>
-      {message ? (
-        <span className="text-sm font-bold text-[var(--accent-strong)]">
-          {message}
-        </span>
-      ) : null}
     </div>
   );
 }
 
-function PresentationModal({
-  path,
-  onClose,
-}: {
-  path: DemoPath;
-  onClose: () => void;
-}) {
+function PresentationModal({ path, onClose }: { path: DemoPath; onClose: () => void }) {
+  const [slideIndex, setSlideIndex] = useState(0);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   const slides = [
-    ["Problem", path.presentation.problem],
-    ["Demo", path.presentation.demoIdea],
-    ["Architecture", path.presentation.architecture],
-    ["Build", path.presentation.buildSteps.join(" | ")],
-    ["Deploy", path.presentation.deployPlan.join(" | ")],
+    { label: "Problem", body: path.presentation.problem },
+    { label: "Demo", body: path.presentation.demoIdea },
+    { label: "Architecture", body: path.presentation.architecture },
+    { label: "Build", body: path.presentation.buildSteps.join(" → ") },
+    { label: "Deploy", body: path.presentation.deployPlan.join(" → ") },
   ];
 
+  useEffect(() => {
+    closeRef.current?.focus();
+
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        setSlideIndex((i) => Math.min(i + 1, slides.length - 1));
+      }
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        setSlideIndex((i) => Math.max(i - 1, 0));
+      }
+    }
+
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose, slides.length]);
+
+  const current = slides[slideIndex];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[var(--foreground)] text-[var(--panel)]">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#4c4a42] bg-[var(--foreground)] px-5 py-4">
-        <h2 className="text-xl font-black">{path.presentation.title}</h2>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Presentation mode"
+      className="fixed inset-0 z-50 flex flex-col bg-[var(--foreground)] text-[var(--panel)]"
+    >
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-[#4c4a42] px-5 py-4">
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-black">{path.presentation.title}</h2>
+          <span className="mono hidden text-xs text-[#d6d0bf] sm:block">
+            Use ← → arrow keys to navigate
+          </span>
+        </div>
         <button
+          ref={closeRef}
           type="button"
           onClick={onClose}
-          className="grid size-10 place-items-center border border-[var(--panel)]"
+          aria-label="Close presentation"
+          className="grid size-10 place-items-center border border-[var(--panel)] focus:outline-white"
         >
           <X size={18} aria-hidden="true" />
         </button>
       </div>
-      <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8">
-        {slides.map(([title, body], index) => (
-          <motion.section
-            key={title}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.08 }}
-            className="min-h-[360px] border border-[var(--panel)] p-8"
+
+      {/* Slide nav dots */}
+      <div className="flex shrink-0 items-center justify-center gap-2 border-b border-[#4c4a42] py-3">
+        {slides.map((slide, i) => (
+          <button
+            key={slide.label}
+            type="button"
+            onClick={() => setSlideIndex(i)}
+            aria-label={`Go to slide ${i + 1}: ${slide.label}`}
+            className={`transition ${
+              i === slideIndex
+                ? "size-2.5 bg-white"
+                : "size-2 bg-white/30 hover:bg-white/60"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Slide content */}
+      <div className="flex flex-1 items-center justify-center overflow-hidden px-5 py-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={slideIndex}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.22 }}
+            className="w-full max-w-4xl"
           >
             <p className="mono text-sm uppercase tracking-[0.18em] text-[#d6d0bf]">
-              Slide {index + 1}
+              Slide {slideIndex + 1} / {slides.length}
             </p>
-            <h3 className="mt-5 text-5xl font-black leading-tight">{title}</h3>
-            <p className="mt-6 max-w-4xl text-2xl leading-10 text-[#d6d0bf]">
-              {body}
+            <h3 className="mt-4 text-5xl font-black leading-tight md:text-7xl">
+              {current.label}
+            </h3>
+            <p className="mt-6 max-w-3xl text-xl leading-9 text-[#d6d0bf] md:text-2xl md:leading-10">
+              {current.body}
             </p>
-          </motion.section>
-        ))}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Footer nav */}
+      <div className="flex shrink-0 items-center justify-between border-t border-[#4c4a42] px-5 py-4">
+        <button
+          type="button"
+          onClick={() => setSlideIndex((i) => Math.max(i - 1, 0))}
+          disabled={slideIndex === 0}
+          className="inline-flex min-h-10 items-center gap-2 border border-[var(--panel)] px-4 text-sm font-black disabled:opacity-30"
+        >
+          ← Prev
+        </button>
+        <span className="mono text-xs text-[#d6d0bf]">
+          {current.label}
+        </span>
+        <button
+          type="button"
+          onClick={() => setSlideIndex((i) => Math.min(i + 1, slides.length - 1))}
+          disabled={slideIndex === slides.length - 1}
+          className="inline-flex min-h-10 items-center gap-2 border border-[var(--panel)] px-4 text-sm font-black disabled:opacity-30"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ isLoading }: { isLoading: boolean }) {
+  return (
+    <div className="grid min-h-[62vh] place-items-center">
+      <div className="w-full max-w-2xl">
+        <div className="border border-[var(--foreground)] bg-[var(--panel)] p-6 shadow-[10px_10px_0_var(--foreground)]">
+          <div className="mx-auto mb-4 grid size-12 place-items-center bg-[var(--accent)] text-white">
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={22} />
+            ) : (
+              <PanelLeftClose size={22} />
+            )}
+          </div>
+          <h1 className="text-center text-3xl font-black">
+            {isLoading ? "Loading history…" : "No generation open"}
+          </h1>
+          {!isLoading ? (
+            <>
+              <p className="mt-3 text-center leading-7 text-[var(--muted)]">
+                Select a recent generation from the sidebar, or start a new
+                analysis from the home page.
+              </p>
+              <div className="mt-6 grid gap-3 border-t border-[var(--border)] pt-6 sm:grid-cols-3">
+                {[
+                  {
+                    icon: <Boxes size={20} />,
+                    title: "Repo x-ray",
+                    text: "Framework, language, features, and deploy readiness",
+                  },
+                  {
+                    icon: <Network size={20} />,
+                    title: "Architecture map",
+                    text: "Full stack blueprint for your chosen demo path",
+                  },
+                  {
+                    icon: <Code2 size={20} />,
+                    title: "Starter pack",
+                    text: "Files, commands, env vars, and implementation steps",
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="border border-[var(--border)] bg-white p-4">
+                    <div className="text-[var(--accent)]">{item.icon}</div>
+                    <p className="mt-3 text-sm font-black">{item.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{item.text}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex justify-center">
+                <Link
+                  href="/"
+                  className="inline-flex min-h-12 items-center gap-2 bg-[var(--accent)] px-6 text-sm font-black text-white transition hover:bg-[var(--accent-strong)]"
+                >
+                  Start new analysis
+                  <ArrowLeft size={16} className="rotate-180" aria-hidden="true" />
+                </Link>
+              </div>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 }
 
 export function GenerateWorkspace() {
-  const [activeGeneration, setActiveGeneration] = useState<GenerationRow | null>(
-    null,
-  );
+  const [activeGeneration, setActiveGeneration] = useState<GenerationRow | null>(null);
   const [generations, setGenerations] = useState<GenerationRow[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState("");
@@ -668,23 +834,16 @@ export function GenerateWorkspace() {
   }, [activeGeneration?.id, activeGeneration?.selectedPath]);
 
   const mergedHistory = useMemo(() => {
-    if (!activeGeneration) {
-      return generations;
-    }
-
-    const withoutActive = generations.filter(
-      (generation) => generation.id !== activeGeneration.id,
-    );
-
+    if (!activeGeneration) return generations;
+    const withoutActive = generations.filter((g) => g.id !== activeGeneration.id);
     return [activeGeneration, ...withoutActive].slice(0, 10);
   }, [activeGeneration, generations]);
 
-  const activePath = activeGeneration
-    ? getActivePath(activeGeneration, activePathId)
-    : null;
+  const activePath = activeGeneration ? getActivePath(activeGeneration, activePathId) : null;
 
   return (
     <main className="page-shell lg:grid lg:grid-cols-[280px_1fr]">
+      {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen border-r border-[var(--foreground)] bg-[var(--panel)] lg:block">
         <SavedHistory
           activeId={activeGeneration?.id ?? null}
@@ -698,6 +857,7 @@ export function GenerateWorkspace() {
 
       <section className="min-h-screen px-5 py-6 md:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl">
+          {/* Top bar */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
@@ -720,16 +880,15 @@ export function GenerateWorkspace() {
           {activeGeneration && activePath ? (
             <div className="grid gap-5 pb-28 lg:grid-cols-[minmax(0,1fr)_280px] lg:pb-8">
               <div className="grid gap-5">
+                {/* Hero header */}
                 <div className="border border-[var(--foreground)] bg-[var(--foreground)] p-4 text-[var(--panel)] shadow-[10px_10px_0_var(--border)] md:p-5">
                   <p className="mono text-xs uppercase tracking-[0.18em] text-[#d6d0bf]">
                     Developer demo lab
                   </p>
-                  <h1 className="mt-2 text-3xl font-black leading-tight md:text-5xl">
+                  <h1 className="mt-2 break-all text-3xl font-black leading-tight md:text-5xl">
                     {activeGeneration.repo_url ?? "Pasted README"}
                   </h1>
-                  <p className="mt-3 max-w-3xl leading-7 text-[#d6d0bf]">
-                    {activePath.summary}
-                  </p>
+                  <p className="mt-3 max-w-3xl leading-7 text-[#d6d0bf]">{activePath.summary}</p>
                 </div>
 
                 <PathPicker
@@ -738,22 +897,25 @@ export function GenerateWorkspace() {
                   onSelect={setActivePathId}
                 />
 
-                <div className="flex flex-wrap gap-2">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`inline-flex min-h-11 items-center gap-2 border px-3 text-sm font-black ${
-                        activeTab === tab.id
-                          ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--panel)]"
-                          : "border-[var(--border)] bg-[var(--panel)] text-[var(--muted)]"
-                      }`}
-                    >
-                      {tab.icon}
-                      {tab.label}
-                    </button>
-                  ))}
+                {/* Tab bar — sticky on mobile */}
+                <div className="sticky top-0 z-10 -mx-5 bg-[var(--background)] px-5 py-2 md:-mx-8 md:px-8 lg:static lg:mx-0 lg:bg-transparent lg:p-0">
+                  <div className="flex flex-wrap gap-2">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`inline-flex min-h-11 items-center gap-2 border px-3 text-sm font-black ${
+                          activeTab === tab.id
+                            ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--panel)]"
+                            : "border-[var(--border)] bg-[var(--panel)] text-[var(--muted)]"
+                        }`}
+                      >
+                        {tab.icon}
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <ExportButtons generation={activeGeneration} path={activePath} />
@@ -785,32 +947,15 @@ export function GenerateWorkspace() {
                 </AnimatePresence>
               </div>
 
-              <ApiMatchRail
-                apiMatch={activeGeneration.apiMatch}
-                path={activePath}
-              />
+              <ApiMatchRail apiMatch={activeGeneration.apiMatch} path={activePath} />
             </div>
           ) : (
-            <div className="grid min-h-[62vh] place-items-center">
-              <div className="max-w-xl border border-[var(--foreground)] bg-[var(--panel)] p-6 text-center shadow-[10px_10px_0_var(--foreground)]">
-                <div className="mx-auto grid size-12 place-items-center bg-[var(--accent)] text-white">
-                  {isLoadingHistory ? (
-                    <Loader2 className="animate-spin" size={22} />
-                  ) : (
-                    <PanelLeftClose size={22} />
-                  )}
-                </div>
-                <h1 className="mt-4 text-3xl font-black">No generation open</h1>
-                <p className="mt-3 leading-7 text-[var(--muted)]">
-                  Start a new analysis or select a recent generation from the
-                  history panel.
-                </p>
-              </div>
-            </div>
+            <EmptyState isLoading={isLoadingHistory} />
           )}
         </div>
       </section>
 
+      {/* Mobile history drawer */}
       <div
         className={`fixed inset-x-0 bottom-0 z-20 border-t border-[var(--foreground)] bg-[var(--panel)] shadow-[0_-18px_60px_rgba(23,23,21,0.18)] transition-transform duration-300 lg:hidden ${
           isDrawerOpen ? "translate-y-0" : "translate-y-[calc(100%-64px)]"
@@ -818,7 +963,7 @@ export function GenerateWorkspace() {
       >
         <button
           type="button"
-          onClick={() => setIsDrawerOpen((value) => !value)}
+          onClick={() => setIsDrawerOpen((v) => !v)}
           className="flex min-h-16 w-full items-center justify-between px-5 text-left font-black"
         >
           <span className="inline-flex items-center gap-2">
